@@ -71,8 +71,8 @@ return [
         ],
 
         'users' => [
-            'driver' => 'database',
-            'table' => 'users',
+            'driver' => 'eloquent',
+            'model' => App\Domain\User\Models\User::class,
         ],
     ],
 
