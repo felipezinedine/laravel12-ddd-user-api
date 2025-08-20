@@ -17,8 +17,13 @@ class AuthService
         ]);
 
         if ($validator->fails()) {
+
+            $errors = collect($validator->errors()->toArray())
+                ->map(fn($messages) => $messages[0])
+                ->toArray();
+
             return response()->json(
-                ['error' => true, 'msg' => 'Validation failed', 'errors' => $validator->errors()],
+                ['error' => true, 'msg' => 'Validation failed', 'errors' => $errors],
             422);
         }
 
