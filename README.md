@@ -22,8 +22,8 @@
 
 ## 🚀 Como rodar o projeto
 ```bash
-git clone https://github.com/felipezinedine/laravel11-ddd-user-api.git
-cd laravel11-ddd-user-api
+git clone https://github.com/felipezinedine/laravel12-ddd-user-api.git
+cd laravel12-ddd-user-api
 composer install
 cp .env.example .env
 php artisan key:generate
