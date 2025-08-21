@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\{AuthController, UserController};
 
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
 
 Route::group(['middleware' => 'auth:api', 'prefix' => 'users'], function () {
     Route::get('/', [UserController::class, 'index']);

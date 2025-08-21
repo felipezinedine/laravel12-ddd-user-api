@@ -5,8 +5,10 @@ namespace App\Domain\User\Service;
 use App\Application\User\DTO\UserCreateDTO;
 use App\Application\User\DTO\UserUpdateDTO;
 use App\Domain\User\Repositories\UserInterface;
+use App\Exceptions\UserNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class UserService
 {
@@ -18,12 +20,12 @@ class UserService
 
     public function index ()
     {
-        return response()->json(['success' => true, 'users' => $this->userInterface->index()], 200);
+        return $this->userInterface->index();
     }
 
     public function getById (int $userId)
     {
-        return response()->json(['success' => true, 'user' => $this->userInterface->getById($userId)], 200);
+        return $this->userInterface->getById($userId);
     }
 
     public function store (Request $request)
@@ -36,20 +38,11 @@ class UserService
         ]);
 
         if ($validator->fails()) {
-            $errors = collect($validator->errors()->toArray())
-                ->map(fn($messages) => $messages[0])
-                ->toArray();
-
-            return response()->json(['error' => true, 'errors' => $errors], 422);
+            throw new ValidationException($validator);
         }
 
         $dto = new UserCreateDTO($request->name, $request->email, $request->cpf, $request->password);
-
-        return response()->json([
-            'success' => true,
-            'msg' => 'Usuário criado com sucesso!',
-            'user' => $this->userInterface->store($dto->toArray())
-        ]);
+        return $this->userInterface->store($dto->toArray());
     }
 
     public function update (Request $request, int $userId)
@@ -61,26 +54,20 @@ class UserService
         ]);
 
         if ($validator->fails()) {
-            $errors = collect($validator->errors()->toArray())
-                ->map(fn($messages) => $messages[0])
-                ->toArray();
-
-            return response()->json(['error' => true, 'errors' => $errors], 422);
+            throw new ValidationException($validator);
         }
 
         $dto = new UserUpdateDTO($request->name, $request->email, $request->cpf);
 
-        return response()->json(['success' => true, 'user' => $this->userInterface->update($dto->toArray(), $userId)], 200);
+        return $this->userInterface->update($dto->toArray(), $userId);
     }
 
     public function delete (int $userId)
     {
         if ($this->userInterface->getById($userId) == null) {
-            return response()->json(['error' => true, 'msg' => 'Usuário não existe na nossa base de dados!'], 404);
+            throw new UserNotFoundException();
         }
 
-        $this->userInterface->delete($userId);
-
-        return response()->json(['success' => true, 'msg' => 'Usuário excluído com sucesso!'], 200);
+        return $this->userInterface->delete($userId);
     }
 }

@@ -5,6 +5,10 @@ namespace App\Domain\Auth\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Auth\AuthenticationException;
+use App\Domain\User\Models\User as UserModel;
+use Illuminate\Validation\ValidationException;
+use App\Application\UseCases\RegisterUserUseCase;
 
 class AuthService
 {
@@ -17,38 +21,59 @@ class AuthService
         ]);
 
         if ($validator->fails()) {
-
-            $errors = collect($validator->errors()->toArray())
-                ->map(fn($messages) => $messages[0])
-                ->toArray();
-
-            return response()->json(
-                ['error' => true, 'msg' => 'Validation failed', 'errors' => $errors],
-            422);
+            throw new ValidationException($validator);
         }
 
         if ($request->filled('email')) {
             if (!Auth::attempt($request->only(['email', 'password']))) {
-                return response()->json(['error' => true, 'msg' => 'Unauthorized'], 401);
+                throw new AuthenticationException('Unauthorized');
             }
 
             $user = Auth::user();
             $token = $user->createToken('authToken')->accessToken;
 
-            return response()->json(['success' => true, 'token' => $token, 'user' => $user], 200);
+            return ['token' => $token, 'user' => $user];
         }
 
         if ($request->filled('cpf')) {
             if (!Auth::attempt($request->only(['cpf', 'password']))) {
-                return response()->json(['error' => true, 'msg' => 'Unauthorized'], 401);
+                throw new AuthenticationException('Unauthorized');
             }
 
             $user = Auth::user();
             $token = $user->createToken('authToken')->accessToken;
 
-            return response()->json(['success' => true, 'token' => $token, 'user' => $user], 200);
+            return ['token' => $token, 'user' => $user];
         }
 
-        return response()->json(['error' => true, 'msg' => 'Unauthorized'], 401);
+        throw new AuthenticationException('Unauthorized');
+    }
+
+    public function register (Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string',
+            'email' => 'required|email|unique:users,email',
+            'cpf' => 'required|unique:users,cpf',
+            'password' => 'required',
+            'c_password' => 'required|same:password'
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+
+        $getUseCase = app(RegisterUserUseCase::class);
+        $responseUseCase = $getUseCase->handle($request);
+
+        return [
+            'token' => $responseUseCase['token'],
+            'user' => $responseUseCase['user'],
+        ];
+    }
+
+    public function generateToken (UserModel $user)
+    {
+        return $user->createToken('authToken')->accessToken;
     }
 }
